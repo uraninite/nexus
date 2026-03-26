@@ -1,0 +1,2507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — LinkedIn Intelligence Platform</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --bg-void: #050507;
+    --bg-deep: #080A0F;
+    --bg-panel: #0C0F18;
+    --bg-card: #0F1420;
+    --bg-hover: #141928;
+    --border: #1A2035;
+    --border-bright: #243050;
+    --cyan: #00D4FF;
+    --cyan-dim: #0066AA;
+    --cyan-glow: rgba(0, 212, 255, 0.15);
+    --green: #00FF88;
+    --green-dim: #00AA55;
+    --green-glow: rgba(0, 255, 136, 0.12);
+    --orange: #FF6B00;
+    --orange-glow: rgba(255, 107, 0, 0.15);
+    --red: #FF2244;
+    --red-glow: rgba(255, 34, 68, 0.15);
+    --purple: #9B59FF;
+    --purple-glow: rgba(155, 89, 255, 0.12);
+    --gold: #FFB800;
+    --text-primary: #E8EDF5;
+    --text-secondary: #7A8BAA;
+    --text-dim: #3A4A6A;
+    --grid-line: rgba(0, 212, 255, 0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-void);
+    color: var(--text-primary);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow: hidden;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* SCANLINE EFFECT */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* LAYOUT */
+  #app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* TOP BAR */
+  #topbar {
+    display: flex; align-items: center; gap: 20px;
+    padding: 0 20px;
+    height: 52px;
+    background: var(--bg-deep);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+  }
+  #topbar::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--green), transparent);
+    opacity: 0.4;
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--cyan);
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px var(--cyan), 0 0 40px rgba(0,212,255,0.3);
+    flex-shrink: 0;
+  }
+  .logo span { color: var(--green); }
+
+  .divider { width: 1px; height: 30px; background: var(--border-bright); flex-shrink: 0; }
+
+  .sys-stat {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .sys-stat .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+
+  #search-global {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 7px 14px;
+    width: 260px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #search-global:focus {
+    border-color: var(--cyan-dim);
+    box-shadow: 0 0 12px var(--cyan-glow);
+  }
+  #search-global::placeholder { color: var(--text-dim); }
+
+  .btn {
+    padding: 7px 16px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.2s;
+    background: transparent;
+  }
+  .btn-cyan { border-color: var(--cyan-dim); color: var(--cyan); }
+  .btn-cyan:hover { background: var(--cyan-glow); box-shadow: 0 0 16px var(--cyan-glow); }
+  .btn-green { border-color: var(--green-dim); color: var(--green); }
+  .btn-green:hover { background: var(--green-glow); box-shadow: 0 0 16px var(--green-glow); }
+  .btn-orange { border-color: var(--orange); color: var(--orange); }
+  .btn-orange:hover { background: var(--orange-glow); }
+
+  /* STATUS BAR */
+  #statusbar {
+    display: flex; align-items: center; gap: 24px;
+    padding: 6px 20px;
+    background: var(--bg-deep);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+  }
+  .stat-chip {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text-secondary);
+  }
+  .stat-chip .val { color: var(--cyan); font-weight: 700; }
+  .stat-chip.green .val { color: var(--green); }
+  .stat-chip.orange .val { color: var(--orange); }
+  .stat-chip.purple .val { color: var(--purple); }
+
+  /* MAIN AREA */
+  #main { display: flex; flex: 1; overflow: hidden; }
+
+  /* LEFT PANEL */
+  #left-panel {
+    width: 280px;
+    flex-shrink: 0;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+  }
+  .panel-count {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+  }
+
+  /* FILTER SECTION */
+  #filters {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .filter-group label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .filter-select, .filter-input {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    outline: none;
+    appearance: none;
+  }
+  .filter-select:focus, .filter-input:focus {
+    border-color: var(--cyan-dim);
+  }
+
+  /* PEOPLE LIST */
+  #people-list {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-bright) transparent;
+  }
+  #people-list::-webkit-scrollbar { width: 4px; }
+  #people-list::-webkit-scrollbar-track { background: transparent; }
+  #people-list::-webkit-scrollbar-thumb { background: var(--border-bright); }
+
+  .person-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .person-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: transparent;
+    transition: background 0.15s;
+  }
+  .person-item:hover { background: var(--bg-hover); }
+  .person-item:hover::before { background: var(--cyan-dim); }
+  .person-item.active { background: rgba(0,212,255,0.05); }
+  .person-item.active::before { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+
+  .person-name {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .person-headline {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .person-meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 4px;
+  }
+  .badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 1px 5px;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-loc { border-color: var(--border-bright); color: var(--text-secondary); }
+  .badge-mil { border-color: var(--orange); color: var(--orange); background: var(--orange-glow); }
+  .badge-tech { border-color: var(--cyan-dim); color: var(--cyan); background: var(--cyan-glow); }
+
+  /* CENTER — MAIN VIEW */
+  #center { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* TAB BAR */
+  #tabs {
+    display: flex; align-items: center;
+    background: var(--bg-deep);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .tab {
+    padding: 10px 18px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab:hover { color: var(--text-primary); }
+  .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+  .tab-icon { font-size: 13px; }
+
+  /* VIEWS */
+  .view { display: none; flex: 1; overflow: hidden; }
+  .view.active { display: flex; flex-direction: column; }
+
+  /* STATS VIEW */
+  #stats-view { overflow-y: auto; padding: 20px; gap: 20px; flex-wrap: wrap; align-content: flex-start; }
+  #stats-view.active { display: flex; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+  }
+  .stat-card.green::before { background: linear-gradient(90deg, var(--green), transparent); }
+  .stat-card.orange::before { background: linear-gradient(90deg, var(--orange), transparent); }
+  .stat-card.purple::before { background: linear-gradient(90deg, var(--purple), transparent); }
+  .stat-card-title {
+    font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 2px;
+    color: var(--text-dim); margin-bottom: 12px; text-transform: uppercase;
+  }
+  .bar-chart { display: flex; flex-direction: column; gap: 6px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--text-secondary); min-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 12px; background: var(--bg-deep); border: 1px solid var(--border); position: relative; }
+  .bar-fill { height: 100%; transition: width 0.6s ease; position: relative; }
+  .bar-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08)); }
+  .bar-val { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--cyan); min-width: 32px; text-align: right; }
+  .pie-wrap { display: flex; align-items: center; gap: 20px; }
+  .pie-legend { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .pie-leg-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); }
+  .pie-leg-dot { width: 10px; height: 10px; flex-shrink: 0; }
+
+  /* TIMELINE VIEW */
+  #timeline-view { overflow-y: auto; padding: 0; }
+  #timeline-view.active { display: flex; flex-direction: column; }
+  .tl-controls {
+    padding: 10px 16px; background: var(--bg-deep); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  }
+  .tl-controls label { font-size: 10px; letter-spacing: 1px; color: var(--text-dim); text-transform: uppercase; }
+  .tl-controls select { background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-primary); font-family: 'Share Tech Mono',monospace; font-size: 11px; padding: 4px 8px; outline: none; }
+  #timeline-canvas-wrap { flex: 1; overflow: auto; position: relative; }
+  .tl-year-axis { display: flex; position: sticky; top: 0; background: var(--bg-panel); border-bottom: 1px solid var(--border); z-index: 5; padding-left: 200px; }
+  .tl-year-tick { flex-shrink: 0; font-family: 'Share Tech Mono',monospace; font-size: 9px; color: var(--text-dim); text-align: center; border-left: 1px solid var(--border); padding: 4px 0; }
+  .tl-person-row { display: flex; align-items: center; border-bottom: 1px solid rgba(26,32,53,0.4); min-height: 32px; }
+  .tl-person-row:hover { background: var(--bg-hover); }
+  .tl-person-name { width: 200px; flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 4px 12px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; position: sticky; left: 0; background: inherit; z-index: 2; }
+  .tl-person-name:hover { color: var(--cyan); }
+  .tl-bars { flex: 1; position: relative; height: 32px; }
+  .tl-bar {
+    position: absolute; height: 14px; top: 9px;
+    cursor: pointer; transition: opacity 0.15s;
+    display: flex; align-items: center; overflow: hidden;
+  }
+  .tl-bar:hover { opacity: 0.85; z-index: 3; }
+  .tl-bar-label { font-family: 'Share Tech Mono',monospace; font-size: 8px; padding: 0 4px; white-space: nowrap; overflow: hidden; color: rgba(0,0,0,0.8); }
+
+  /* CONNECTIONS TABLE */
+  #connections-view { overflow: auto; padding: 0; flex-direction: column; }
+  #connections-view.active { display: flex; }
+  .conn-controls {
+    padding: 10px 16px; background: var(--bg-deep); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; flex-shrink: 0; flex-wrap: wrap;
+  }
+  .conn-controls label { font-size: 10px; letter-spacing: 1px; color: var(--text-dim); text-transform: uppercase; }
+  .conn-controls input, .conn-controls select {
+    background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-primary);
+    font-family: 'Share Tech Mono',monospace; font-size: 11px; padding: 5px 10px; outline: none;
+  }
+  .conn-controls input { width: 200px; }
+  .conn-table-wrap { flex: 1; overflow: auto; }
+  .conn-table { border-collapse: collapse; width: 100%; font-size: 11px; }
+  .conn-table th {
+    font-family: 'Orbitron',monospace; font-size: 9px; letter-spacing: 1px; color: var(--text-dim);
+    padding: 9px 14px; border-bottom: 1px solid var(--border); text-align: left;
+    cursor: pointer; position: sticky; top: 0; background: var(--bg-panel); white-space: nowrap;
+  }
+  .conn-table th:hover { color: var(--cyan); }
+  .conn-table td { padding: 7px 14px; border-bottom: 1px solid rgba(26,32,53,0.4); color: var(--text-secondary); white-space: nowrap; font-family: 'Share Tech Mono',monospace; }
+  .conn-table tr:hover td { background: var(--bg-hover); }
+  .conn-name { color: var(--text-primary) !important; font-weight: 700; font-family: 'Rajdhani',sans-serif !important; font-size: 13px !important; cursor: pointer; }
+  .conn-name:hover { color: var(--cyan) !important; }
+  .conn-company { color: var(--orange) !important; }
+  .conn-period { color: var(--cyan) !important; }
+  .conn-mil { color: var(--orange) !important; }
+
+  /* HEATMAP */
+  #heatmap-view { overflow-y: auto; padding: 20px; align-content: flex-start; gap: 20px; }
+  #heatmap-view.active { display: flex; flex-wrap: wrap; }
+  .heatmap-section { width: 100%; }
+  .heatmap-section-title {
+    font-family: 'Orbitron',monospace; font-size: 10px; letter-spacing: 2px;
+    color: var(--text-dim); margin-bottom: 12px; text-transform: uppercase;
+  }
+  .heatmap-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+  .hm-cell {
+    padding: 6px 10px;
+    font-family: 'Share Tech Mono',monospace; font-size: 10px;
+    cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .hm-cell:hover { border-color: var(--cyan-dim); }
+  .hm-cell-label { color: var(--text-secondary); }
+  .hm-cell-count { font-weight: 700; }
+
+  /* RECENT SIDEBAR */
+  #recent-panel {
+    width: 0; flex-shrink: 0; background: var(--bg-panel);
+    border-left: 1px solid var(--border); overflow: hidden;
+    transition: width 0.3s ease; display: flex; flex-direction: column;
+  }
+  #recent-panel.open { width: 220px; }
+  .recent-header {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    font-family: 'Orbitron',monospace; font-size: 9px; letter-spacing: 2px; color: var(--text-dim);
+    display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+  }
+  .recent-list { flex: 1; overflow-y: auto; }
+  .recent-item {
+    padding: 8px 12px; border-bottom: 1px solid rgba(26,32,53,0.4);
+    cursor: pointer; transition: background 0.15s;
+  }
+  .recent-item:hover { background: var(--bg-hover); }
+  .recent-item-name { font-size: 11px; font-weight: 700; color: var(--text-primary); }
+  .recent-item-time { font-family: 'Share Tech Mono',monospace; font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+
+  /* PROFILE DETAIL VIEW */
+  #profile-view {
+    overflow-y: auto;
+    padding: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-bright) transparent;
+  }
+  #profile-view::-webkit-scrollbar { width: 4px; }
+
+  .profile-hero {
+    padding: 24px;
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-panel));
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--cyan-glow), transparent 70%);
+  }
+
+  .profile-name-row { display: flex; align-items: flex-start; gap: 16px; }
+  .profile-avatar {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--cyan-dim), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--bg-void);
+    flex-shrink: 0;
+    border: 1px solid var(--cyan-dim);
+  }
+  .profile-info { flex: 1; }
+  .profile-fullname {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+  }
+  .profile-headline-text {
+    color: var(--cyan);
+    font-size: 13px;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  .profile-tags {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 12px;
+  }
+  .tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px solid;
+    letter-spacing: 0.5px;
+  }
+  .tag-loc { border-color: var(--border-bright); color: var(--text-secondary); }
+  .tag-conn { border-color: var(--purple); color: var(--purple); }
+  .tag-ind { border-color: var(--green-dim); color: var(--green); }
+
+  .profile-url {
+    margin-top: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--cyan-dim);
+  }
+  .profile-url a { color: inherit; text-decoration: none; }
+  .profile-url a:hover { color: var(--cyan); }
+
+  /* SECTIONS */
+  .profile-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .section-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* TIMELINE */
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before {
+    content: '';
+    position: absolute; left: 6px; top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(180deg, var(--cyan-dim), var(--border));
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .timeline-item:hover { border-color: var(--border-bright); }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -17px; top: 14px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--cyan-dim);
+    border: 1px solid var(--cyan);
+    box-shadow: 0 0 8px var(--cyan-glow);
+  }
+  .timeline-item.military::before { background: var(--orange); border-color: var(--orange); box-shadow: 0 0 8px var(--orange-glow); }
+
+  .tl-company {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .tl-title {
+    font-size: 12px;
+    color: var(--cyan);
+    margin-top: 2px;
+  }
+  .tl-date {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  .tl-industry {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* EDUCATION */
+  .edu-item {
+    padding: 10px 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .edu-school { font-weight: 700; font-size: 13px; }
+  .edu-degree { font-size: 12px; color: var(--green); margin-top: 2px; }
+  .edu-years { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+
+  /* CO-WORKERS SECTION */
+  .coworker-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .coworker-card {
+    padding: 10px 12px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .coworker-card:hover {
+    border-color: var(--cyan-dim);
+    background: var(--bg-hover);
+  }
+  .cw-name { font-weight: 700; font-size: 12px; }
+  .cw-company { font-size: 10px; color: var(--orange); margin-top: 2px; }
+  .cw-period { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+
+  /* GEO VIEW */
+  #geo-view {
+    display: none;
+    flex-direction: column;
+    position: relative;
+    background: var(--bg-deep);
+  }
+  #geo-view.active { display: flex; }
+
+  #geo-map {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  #geo-canvas { width: 100%; height: 100%; display: block; }
+
+  .geo-timeline {
+    padding: 12px 20px;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tl-slider-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .tl-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    min-width: 80px;
+  }
+  #year-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 2px;
+    background: linear-gradient(90deg, var(--cyan), var(--border-bright));
+    outline: none;
+  }
+  #year-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
+    cursor: pointer;
+  }
+  #year-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    color: var(--cyan);
+    min-width: 60px;
+    text-align: right;
+    text-shadow: 0 0 15px var(--cyan-glow);
+  }
+
+  .geo-legend {
+    display: flex; gap: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+
+  /* MATRIX VIEW */
+  #matrix-view { overflow: auto; padding: 20px; }
+  #matrix-view.active { display: flex; flex-direction: column; }
+
+  .matrix-table {
+    border-collapse: collapse;
+    font-size: 11px;
+    min-width: 100%;
+  }
+  .matrix-table th {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    text-align: left;
+    cursor: pointer;
+    position: sticky; top: 0;
+    background: var(--bg-panel);
+  }
+  .matrix-table th:hover { color: var(--cyan); }
+  .matrix-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(26,32,53,0.5);
+    white-space: nowrap;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .matrix-table tr:hover td { background: var(--bg-hover); }
+  .td-name { color: var(--text-primary) !important; font-weight: 700; font-family: 'Rajdhani',sans-serif !important; font-size: 13px !important; cursor: pointer; }
+  .td-name:hover { color: var(--cyan) !important; }
+  .td-mil { color: var(--orange) !important; }
+  .td-loc { color: var(--text-secondary) !important; }
+  .td-count { color: var(--cyan) !important; text-align: center; }
+  .td-con { color: var(--green) !important; font-size: 10px !important; }
+
+  /* RIGHT PANEL — INTEL DRAWER */
+  #right-panel {
+    width: 0;
+    flex-shrink: 0;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border);
+    overflow: hidden;
+    transition: width 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  #right-panel.open { width: 360px; }
+
+  .drawer-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .drawer-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--orange);
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .close-btn:hover { color: var(--text-primary); }
+
+  #intel-content { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-bright) transparent; }
+
+  .intel-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .intel-section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .intel-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(26,32,53,0.5);
+  }
+  .intel-key { font-size: 11px; color: var(--text-secondary); }
+  .intel-val { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text-primary); text-align: right; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+  .intel-val.cyan { color: var(--cyan); }
+  .intel-val.green { color: var(--green); }
+  .intel-val.orange { color: var(--orange); }
+
+  .overlap-item {
+    padding: 8px 10px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+  .overlap-persons { font-weight: 700; font-size: 12px; color: var(--orange); }
+  .overlap-detail { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+  .overlap-period { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+  /* IMPORT PANEL */
+  #import-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(5,5,7,0.92);
+    z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  #import-overlay.open { display: flex; }
+
+  .import-modal {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    width: 560px;
+    max-height: 80vh;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .import-modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+  }
+
+  .import-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .import-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+  }
+
+  .import-body { padding: 24px; overflow-y: auto; }
+
+  .drop-zone {
+    border: 2px dashed var(--border-bright);
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--cyan-dim);
+    background: var(--cyan-glow);
+  }
+  .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .drop-icon { font-size: 36px; margin-bottom: 12px; }
+  .drop-text { font-size: 14px; color: var(--text-secondary); }
+  .drop-sub { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+
+  #import-file-list { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .file-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+  }
+  .file-icon { color: var(--green); font-size: 16px; }
+  .file-name { flex: 1; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text-secondary); }
+  .file-records { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--cyan); }
+  .file-status { font-size: 16px; }
+
+  .import-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+
+  /* TOOLTIP */
+  #tooltip {
+    position: fixed;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-bright);
+    padding: 10px 14px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 50;
+    display: none;
+    max-width: 220px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .tt-name { font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .tt-detail { color: var(--text-secondary); font-size: 11px; }
+  .tt-type { font-family: 'Share Tech Mono', monospace; font-size: 10px; margin-top: 4px; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-title { font-family: 'Orbitron', monospace; font-size: 12px; letter-spacing: 2px; margin-bottom: 8px; }
+  .empty-sub { font-size: 12px; }
+
+  /* HIGHLIGHT for military */
+  .military-flag {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 1px 6px;
+    background: var(--orange-glow);
+    border: 1px solid var(--orange);
+    color: var(--orange);
+    margin-left: 6px;
+  }
+
+  /* PHOTO LIGHTBOX */
+  .profile-photo-wrap {
+    position: relative;
+    width: 56px; height: 56px;
+    flex-shrink: 0;
+    cursor: zoom-in;
+  }
+  .profile-photo-wrap img {
+    width: 56px; height: 56px;
+    object-fit: cover;
+    border: 1px solid var(--cyan-dim);
+    display: block;
+    transition: box-shadow 0.2s;
+  }
+  .profile-photo-wrap:hover img {
+    box-shadow: 0 0 16px var(--cyan-glow);
+  }
+  .photo-zoom-icon {
+    position: absolute; bottom: 2px; right: 2px;
+    font-size: 10px; color: var(--cyan);
+    background: rgba(8,10,15,0.8);
+    padding: 1px 3px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .profile-photo-wrap:hover .photo-zoom-icon { opacity: 1; }
+
+  #photo-lightbox {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(5,5,7,0.94);
+    z-index: 200;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+  #photo-lightbox.open { display: flex; }
+  #photo-lightbox img {
+    max-width: 80vw;
+    max-height: 75vh;
+    border: 1px solid var(--cyan-dim);
+    box-shadow: 0 0 60px rgba(0,212,255,0.2);
+    cursor: default;
+    transition: transform 0.15s;
+    transform-origin: center;
+  }
+  .lightbox-controls {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .lightbox-controls button {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-bright);
+    color: var(--cyan);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 6px 14px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+  .lightbox-controls button:hover { background: var(--cyan-glow); }
+  #lightbox-zoom-val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    min-width: 50px; text-align: center;
+  }
+  .lightbox-close {
+    position: absolute; top: 20px; right: 24px;
+    background: none; border: none;
+    color: var(--text-secondary);
+    font-size: 28px; cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .lightbox-close:hover { color: var(--text-primary); }
+
+  /* SPLASH SCREEN */
+  #splash {
+    position: fixed; inset: 0;
+    background: var(--bg-void);
+    z-index: 300;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 24px;
+    transition: opacity 0.4s ease;
+  }
+  #splash.fade-out { opacity: 0; pointer-events: none; }
+  .splash-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--cyan);
+    letter-spacing: 8px;
+    text-shadow: 0 0 40px var(--cyan), 0 0 80px rgba(0,212,255,0.3);
+  }
+  .splash-logo span { color: var(--green); }
+  .splash-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+  }
+  .splash-bar-wrap {
+    width: 320px; height: 2px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .splash-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+    width: 0%;
+    transition: width 0.6s ease;
+    box-shadow: 0 0 10px var(--cyan);
+  }
+
+  /* Loading animation */
+  .loading-dots span {
+    animation: blink 1.2s infinite;
+    color: var(--cyan);
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,100%{opacity:0.2} 50%{opacity:1} }
+</style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <div class="splash-logo">NEX<span>US</span></div>
+  <div class="splash-bar-wrap"><div class="splash-bar" id="splash-bar"></div></div>
+  <div class="splash-status" id="splash-status">INITIALIZING SYSTEM...</div>
+</div>
+
+<!-- PHOTO LIGHTBOX -->
+<div id="photo-lightbox" onclick="if(event.target===this)closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-controls">
+    <button onclick="lightboxZoom(-0.25)">− ZOOM</button>
+    <span id="lightbox-zoom-val">100%</span>
+    <button onclick="lightboxZoom(0.25)">+ ZOOM</button>
+    <button onclick="lightboxReset()">RESET</button>
+  </div>
+</div>
+
+<div id="app">
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="logo">NEX<span>US</span></div>
+    <div class="divider"></div>
+    <div class="sys-stat"><div class="dot"></div> SYSTEM ONLINE</div>
+    <div class="divider"></div>
+    <div class="sys-stat" id="clock-display">--:--:-- UTC</div>
+    <input id="search-global" type="text" placeholder="SEARCH TARGETS, COMPANIES, LOCATIONS..." oninput="globalSearch(this.value)">
+    <div class="topbar-right">
+      <button class="btn btn-green" onclick="openImport()">⊕ IMPORT DATA</button>
+      <button class="btn btn-orange" onclick="findOverlaps()">⚡ FIND OVERLAPS</button>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <div class="stat-chip"><span>TARGETS</span><span class="val" id="stat-people">0</span></div>
+    <div class="stat-chip"><span>ENTITIES</span><span class="val" id="stat-companies">0</span></div>
+    <div class="stat-chip green"><span>LOADED</span><span class="val" id="stat-edges">0</span></div>
+    <div class="stat-chip orange"><span>MIL LINKS</span><span class="val" id="stat-mil">0</span></div>
+    <div class="stat-chip purple"><span>DATASETS</span><span class="val" id="stat-files">0</span></div>
+    <div class="stat-chip" style="margin-left:auto; font-size:10px; color: var(--text-dim);" id="last-update">NO DATA LOADED</div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div id="main">
+    <!-- LEFT PANEL -->
+    <div id="left-panel">
+      <div class="panel-header">
+        <div class="panel-title">TARGET INDEX</div>
+        <div class="panel-count" id="list-count">0 targets</div>
+      </div>
+      <div id="filters">
+        <div class="filter-group">
+          <label>Filter by Location</label>
+          <select class="filter-select" id="filter-loc" onchange="applyFilters()">
+            <option value="">All Locations</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Filter by Company</label>
+          <select class="filter-select" id="filter-company" onchange="applyFilters()">
+            <option value="">All Companies</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Filter by Unit/Org</label>
+          <select class="filter-select" id="filter-mil" onchange="applyFilters()">
+            <option value="">All Units</option>
+            <option value="Unit 8200">Unit 8200</option>
+            <option value="Intelligence Corps">Intelligence Corps</option>
+            <option value="Ofek 324">Ofek 324</option>
+            <option value="C4I">C4I Directorate</option>
+            <option value="IDF">IDF (General)</option>
+          </select>
+        </div>
+      </div>
+      <div id="people-list">
+        <div class="empty-state">
+          <div class="empty-icon">⬡</div>
+          <div class="empty-title">NO DATA</div>
+          <div class="empty-sub">Import JSON files to begin</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div id="center">
+      <!-- TABS -->
+      <div id="tabs">
+        <div class="tab active" onclick="switchTab('stats')" id="tab-stats"><span class="tab-icon">◉</span> STATS</div>
+        <div class="tab" onclick="switchTab('timeline')" id="tab-timeline"><span class="tab-icon">▶</span> TIMELINE</div>
+        <div class="tab" onclick="switchTab('connections')" id="tab-connections"><span class="tab-icon">⬡</span> CONNECTIONS</div>
+        <div class="tab" onclick="switchTab('heatmap')" id="tab-heatmap"><span class="tab-icon">▦</span> HEATMAP</div>
+        <div class="tab" onclick="switchTab('profile')" id="tab-profile"><span class="tab-icon">◈</span> PROFILE</div>
+        <div class="tab" onclick="switchTab('geo')" id="tab-geo"><span class="tab-icon">◎</span> GEO</div>
+        <div class="tab" onclick="switchTab('matrix')" id="tab-matrix"><span class="tab-icon">≡</span> MATRIX</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:6px;padding-right:8px;">
+          <button class="btn btn-cyan" onclick="exportData('csv')" style="font-size:10px;padding:5px 10px;">⬇ CSV</button>
+          <button class="btn btn-green" onclick="exportData('json')" style="font-size:10px;padding:5px 10px;">⬇ JSON</button>
+          <button class="btn" style="font-size:10px;padding:5px 10px;border-color:var(--purple);color:var(--purple)" onclick="toggleRecentPanel()">⏱ RECENT</button>
+        </div>
+      </div>
+
+      <!-- STATS VIEW -->
+      <div class="view active" id="stats-view">
+        <div class="stats-grid" id="stats-grid"></div>
+      </div>
+
+      <!-- TIMELINE VIEW -->
+      <div class="view" id="timeline-view">
+        <div class="tl-controls">
+          <label>Show</label>
+          <select id="tl-filter-type" onchange="renderTimeline()">
+            <option value="all">All People</option>
+            <option value="mil">Military Only</option>
+            <option value="civ">Civilian Only</option>
+          </select>
+          <label>Sort</label>
+          <select id="tl-sort" onchange="renderTimeline()">
+            <option value="name">Name</option>
+            <option value="start">Earliest Start</option>
+            <option value="mil">Military First</option>
+          </select>
+          <label style="margin-left:auto;color:var(--text-dim);font-size:10px" id="tl-count"></label>
+        </div>
+        <div id="timeline-canvas-wrap">
+          <div id="tl-year-axis" class="tl-year-axis"></div>
+          <div id="tl-rows"></div>
+        </div>
+      </div>
+
+      <!-- CONNECTIONS VIEW -->
+      <div class="view" id="connections-view">
+        <div class="conn-controls">
+          <label>Search</label>
+          <input type="text" id="conn-search" placeholder="name or company..." oninput="renderConnections()">
+          <label>Company</label>
+          <select id="conn-company" onchange="renderConnections()">
+            <option value="">All</option>
+          </select>
+          <label>Min Overlap</label>
+          <select id="conn-min-overlap" onchange="renderConnections()">
+            <option value="1">1+ yr</option>
+            <option value="2">2+ yr</option>
+            <option value="3">3+ yr</option>
+          </select>
+          <span id="conn-count" style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim)"></span>
+        </div>
+        <div class="conn-table-wrap">
+          <table class="conn-table">
+            <thead><tr>
+              <th onclick="sortConn('a')">PERSON A ↕</th>
+              <th onclick="sortConn('b')">PERSON B ↕</th>
+              <th onclick="sortConn('company')">SHARED COMPANY ↕</th>
+              <th onclick="sortConn('from')">FROM ↕</th>
+              <th onclick="sortConn('to')">TO ↕</th>
+              <th onclick="sortConn('years')">OVERLAP YRS ↕</th>
+              <th>TYPE</th>
+            </tr></thead>
+            <tbody id="conn-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- HEATMAP VIEW -->
+      <div class="view" id="heatmap-view">
+        <div class="heatmap-section" style="width:100%">
+          <div class="heatmap-section-title">TOP COMPANIES BY HEADCOUNT</div>
+          <div class="heatmap-grid" id="hm-companies"></div>
+        </div>
+        <div class="heatmap-section" style="width:100%">
+          <div class="heatmap-section-title">LOCATION DISTRIBUTION</div>
+          <div class="heatmap-grid" id="hm-locations"></div>
+        </div>
+        <div class="heatmap-section" style="width:100%">
+          <div class="heatmap-section-title">ACTIVE YEARS HEATMAP</div>
+          <div class="heatmap-grid" id="hm-years"></div>
+        </div>
+      </div>
+
+      <!-- PROFILE VIEW -->
+      <div class="view" id="profile-view">
+        <div class="empty-state" id="profile-empty">
+          <div class="empty-icon">◈</div>
+          <div class="empty-title">SELECT A TARGET</div>
+          <div class="empty-sub">Click any person to view full intelligence profile</div>
+        </div>
+        <div id="profile-content" style="display:none; flex-direction:column;"></div>
+      </div>
+
+      <!-- GEO VIEW -->
+      <div class="view" id="geo-view">
+        <div id="geo-map">
+          <canvas id="geo-canvas"></canvas>
+        </div>
+        <div class="geo-timeline">
+          <div class="tl-slider-row">
+            <span class="tl-label">TIMELINE</span>
+            <input type="range" id="year-slider" min="2000" max="2026" value="2026" oninput="updateGeoYear(this.value)">
+            <span id="year-display">2026</span>
+          </div>
+          <div class="geo-legend">
+            <span>● Persons Active</span>
+            <span style="color:var(--orange)">◆ Military Service</span>
+            <span style="color:var(--green)">▲ Tech/Civilian</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MATRIX VIEW -->
+      <div class="view" id="matrix-view">
+        <div id="matrix-container"></div>
+      </div>
+    </div>
+
+    <!-- RECENT PANEL -->
+    <div id="recent-panel">
+      <div class="recent-header">
+        <span>RECENT</span>
+        <button class="close-btn" onclick="toggleRecentPanel()" style="font-size:14px">×</button>
+      </div>
+      <div class="recent-list" id="recent-list"></div>
+    </div>
+
+    <!-- RIGHT PANEL — INTEL DRAWER -->
+    <div id="right-panel">
+      <div class="drawer-header">
+        <div class="drawer-title">⚡ INTELLIGENCE REPORT</div>
+        <button class="close-btn" onclick="closeDrawer()">×</button>
+      </div>
+      <div id="intel-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT OVERLAY -->
+<div id="import-overlay">
+  <div class="import-modal">
+    <div class="import-header">
+      <div class="import-title">DATA INGESTION ENGINE</div>
+      <button class="close-btn" onclick="closeImport()">×</button>
+    </div>
+    <div class="import-body">
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" multiple accept=".json" onchange="handleFiles(this.files)" id="file-input">
+        <div class="drop-icon">⬡</div>
+        <div class="drop-text">Drop JSON files here or click to browse</div>
+        <div class="drop-sub">Supports multiple files — auto-deduplication enabled</div>
+      </div>
+      <div id="import-file-list"></div>
+    </div>
+    <div class="import-footer">
+      <button class="btn btn-cyan" onclick="closeImport()">CANCEL</button>
+      <button class="btn btn-green" onclick="processImport()">INGEST DATA →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const STATE = {
+  people: [],
+  companies: {},
+  filteredPeople: [],
+  selectedPerson: null,
+  importedFiles: [],
+  pendingData: [],
+  geo: { year: 2026, dots: [] },
+  activeTab: 'stats',
+  photoIndex: 1, // global counter: each new person gets next photo slot
+};
+
+const MILITARY_KEYWORDS = ['unit 8200','intelligence','idf','ief','military','mossad','shin bet','aman','8200','ofek','c4i','mamram','iaf','defense corps','intelligence corps'];
+
+function isMilitary(name) {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  return MILITARY_KEYWORDS.some(k => n.includes(k));
+}
+
+// ============================================================
+// CLOCK
+// ============================================================
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getUTCHours()).padStart(2,'0');
+  const m = String(now.getUTCMinutes()).padStart(2,'0');
+  const s = String(now.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('clock-display').textContent = `${h}:${m}:${s} UTC`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ============================================================
+// IMPORT ENGINE
+// ============================================================
+function openImport() { document.getElementById('import-overlay').classList.add('open'); }
+function closeImport() { document.getElementById('import-overlay').classList.remove('open'); }
+
+function handleFiles(files) {
+  STATE.pendingData = [];
+  const list = document.getElementById('import-file-list');
+  list.innerHTML = '';
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        const elements = data.elements || [];
+        STATE.pendingData.push({ name: file.name, elements });
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML = `<span class="file-icon">✓</span><span class="file-name">${file.name}</span><span class="file-records">${elements.length} records</span><span class="file-status" style="color:var(--green)">●</span>`;
+        list.appendChild(item);
+      } catch {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML = `<span class="file-icon" style="color:var(--red)">✗</span><span class="file-name">${file.name}</span><span class="file-records">PARSE ERROR</span>`;
+        list.appendChild(item);
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+function processImport() {
+  if (!STATE.pendingData.length) return;
+  const allElements = STATE.pendingData.flatMap(d => d.elements);
+  ingestElements(allElements);
+  STATE.importedFiles.push(...STATE.pendingData.map(d => d.name));
+  closeImport();
+  document.getElementById('stat-files').textContent = STATE.importedFiles.length;
+  updateUI();
+}
+
+// Persistent lookup structures — rebuilt only on full reset
+const _seenIds = new Set();
+const _peopleMap = new Map();
+
+function ingestElements(elements) {
+  elements.forEach(el => {
+    const lmr = el.linkedInMemberProfileUrnResolutionResult || {};
+    const id = lmr.entityUrn || lmr.publicProfileUrl || (lmr.firstName + '_' + lmr.lastName + '_' + Math.random());
+    if (_seenIds.has(id)) {
+      // MERGE: add any extra work experience
+      const existing = _peopleMap.get(id);
+      if (existing) {
+        const newExp = (lmr.workExperience || []).filter(w => !existing.workExperience.some(e => e.companyName === w.companyName && e.title === w.title));
+        existing.workExperience.push(...newExp);
+      }
+      return;
+    }
+    _seenIds.add(id);
+    const loc = typeof lmr.location === 'object' ? (lmr.location?.displayName || '') : (lmr.location || '');
+    const person = {
+      id,
+      firstName: lmr.firstName || lmr.unobfuscatedFirstName || '?',
+      lastName: lmr.lastName || lmr.unobfuscatedLastName || '?',
+      headline: lmr.headline || '',
+      location: loc,
+      publicProfileUrl: lmr.publicProfileUrl || '',
+      numConnections: lmr.numConnections || 0,
+      networkDistance: lmr.networkDistance || '',
+      industryName: lmr.industryName || '',
+      workExperience: lmr.workExperience || [],
+      educations: lmr.educations || [],
+      currentPositions: lmr.currentPositions || [],
+      photoSlot: STATE.photoIndex++, // assigned once, never changes
+    };
+    STATE.people.push(person);
+    _peopleMap.set(id, person);
+    person.workExperience.forEach(w => {
+      const cn = w.companyName;
+      if (!cn) return;
+      if (!STATE.companies[cn]) {
+        STATE.companies[cn] = { name: cn, people: [], military: isMilitary(cn), industry: w.companyResolutionResult?.industries?.[0] || '' };
+      }
+      if (!STATE.companies[cn].people.includes(person.id)) {
+        STATE.companies[cn].people.push(person.id);
+      }
+    });
+  });
+
+  buildGeoData();
+  applyFilters();
+}
+
+// ============================================================
+// STATS VIEW
+// ============================================================
+function renderStats() {
+  const grid = document.getElementById('stats-grid');
+  if (!STATE.people.length) { grid.innerHTML = '<div class="empty-state" style="height:300px;width:100%"><div class="empty-icon">◉</div><div class="empty-title">NO DATA</div></div>'; return; }
+
+  // Top companies
+  const coEntries = Object.entries(STATE.companies)
+    .sort((a,b) => b[1].people.length - a[1].people.length).slice(0,15);
+  const maxCo = coEntries[0]?.[1].people.length || 1;
+
+  // Top locations
+  const locMap = {};
+  STATE.people.forEach(p => {
+    const loc = p.location?.split(',').pop()?.trim() || 'Unknown';
+    locMap[loc] = (locMap[loc]||0) + 1;
+  });
+  const locEntries = Object.entries(locMap).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const maxLoc = locEntries[0]?.[1] || 1;
+
+  // Mil vs civ
+  const milCount = STATE.people.filter(p=>p.workExperience.some(w=>isMilitary(w.companyName))).length;
+  const civCount = STATE.people.length - milCount;
+
+  // Experience distribution
+  const expBuckets = {'0-2':0,'3-5':0,'6-10':0,'10+':0};
+  STATE.people.forEach(p => {
+    const n = p.workExperience.length;
+    if (n<=2) expBuckets['0-2']++;
+    else if (n<=5) expBuckets['3-5']++;
+    else if (n<=10) expBuckets['6-10']++;
+    else expBuckets['10+']++;
+  });
+  const maxExp = Math.max(...Object.values(expBuckets));
+
+  // Industry breakdown
+  const indMap = {};
+  STATE.people.forEach(p => {
+    const ind = p.industryName || 'Unknown';
+    indMap[ind] = (indMap[ind]||0) + 1;
+  });
+  const indEntries = Object.entries(indMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxInd = indEntries[0]?.[1] || 1;
+
+  grid.innerHTML = `
+  <div class="stat-card" style="grid-column:1/-1">
+    <div class="stat-card-title">TOP COMPANIES BY HEADCOUNT</div>
+    <div class="bar-chart">
+      ${coEntries.map(([name,co])=>`<div class="bar-row">
+        <div class="bar-label" title="${name}">${co.military?'⚡ ':''}${name}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${co.people.length/maxCo*100}%;background:${co.military?'var(--orange)':'var(--cyan)'}"></div></div>
+        <div class="bar-val">${co.people.length}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card-title">MILITARY vs CIVILIAN</div>
+    <div class="pie-wrap">
+      <canvas id="pie-canvas" width="120" height="120"></canvas>
+      <div class="pie-legend">
+        <div class="pie-leg-item"><div class="pie-leg-dot" style="background:var(--orange)"></div>Military: ${milCount} (${Math.round(milCount/STATE.people.length*100)}%)</div>
+        <div class="pie-leg-item"><div class="pie-leg-dot" style="background:var(--cyan)"></div>Civilian: ${civCount} (${Math.round(civCount/STATE.people.length*100)}%)</div>
+        <div class="pie-leg-item" style="margin-top:8px;color:var(--text-dim)">Total: ${STATE.people.length}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-card green">
+    <div class="stat-card-title">EXPERIENCE DISTRIBUTION</div>
+    <div class="bar-chart">
+      ${Object.entries(expBuckets).map(([k,v])=>`<div class="bar-row">
+        <div class="bar-label">${k} positions</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${v/maxExp*100}%;background:var(--green)"></div></div>
+        <div class="bar-val" style="color:var(--green)">${v}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="stat-card orange">
+    <div class="stat-card-title">TOP LOCATIONS</div>
+    <div class="bar-chart">
+      ${locEntries.map(([loc,cnt])=>`<div class="bar-row">
+        <div class="bar-label">${loc}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${cnt/maxLoc*100}%;background:var(--orange)"></div></div>
+        <div class="bar-val" style="color:var(--orange)">${cnt}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="stat-card purple" style="grid-column:1/-1">
+    <div class="stat-card-title">INDUSTRY BREAKDOWN</div>
+    <div class="bar-chart">
+      ${indEntries.map(([ind,cnt])=>`<div class="bar-row">
+        <div class="bar-label">${ind}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${cnt/maxInd*100}%;background:var(--purple)"></div></div>
+        <div class="bar-val" style="color:var(--purple)">${cnt}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+  `;
+
+  // Draw pie chart
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById('pie-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const cx = 60, cy = 60, r = 50;
+    const total = milCount + civCount;
+    const milAngle = (milCount / total) * Math.PI * 2;
+    ctx.clearRect(0,0,120,120);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,0,milAngle); ctx.closePath();
+    ctx.fillStyle = '#FF6B00'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,milAngle,Math.PI*2); ctx.closePath();
+    ctx.fillStyle = '#00D4FF'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,28,0,Math.PI*2);
+    ctx.fillStyle = 'var(--bg-card,#0F1420)'; ctx.fill();
+  });
+}
+
+// ============================================================
+// TIMELINE VIEW
+// ============================================================
+const TL_START = 1990, TL_END = 2026, TL_PX_PER_YEAR = 28;
+
+function renderTimeline() {
+  const wrap = document.getElementById('timeline-canvas-wrap');
+  const axis = document.getElementById('tl-year-axis');
+  const rows = document.getElementById('tl-rows');
+  const filterType = document.getElementById('tl-filter-type')?.value || 'all';
+  const sortBy = document.getElementById('tl-sort')?.value || 'name';
+
+  let people = [...STATE.filteredPeople];
+  if (filterType === 'mil') people = people.filter(p => p.workExperience.some(w=>isMilitary(w.companyName)));
+  if (filterType === 'civ') people = people.filter(p => !p.workExperience.some(w=>isMilitary(w.companyName)));
+  if (sortBy === 'name') people.sort((a,b)=>(a.firstName+a.lastName).localeCompare(b.firstName+b.lastName));
+  if (sortBy === 'start') people.sort((a,b)=>{
+    const as = Math.min(...a.workExperience.map(w=>w.startDateOn?.year||2026));
+    const bs = Math.min(...b.workExperience.map(w=>w.startDateOn?.year||2026));
+    return as - bs;
+  });
+  if (sortBy === 'mil') people.sort((a,b) => {
+    const am = a.workExperience.some(w=>isMilitary(w.companyName));
+    const bm = b.workExperience.some(w=>isMilitary(w.companyName));
+    return bm - am;
+  });
+
+  document.getElementById('tl-count').textContent = people.length + ' people';
+
+  // Year axis
+  axis.style.paddingLeft = '200px';
+  let axisHtml = '';
+  for (let y = TL_START; y <= TL_END; y++) {
+    axisHtml += `<div class="tl-year-tick" style="width:${TL_PX_PER_YEAR}px">${y%5===0?y:''}</div>`;
+  }
+  axis.innerHTML = axisHtml;
+
+  // Person rows
+  const totalWidth = (TL_END - TL_START + 1) * TL_PX_PER_YEAR;
+  rows.innerHTML = people.map(p => {
+    const mil = p.workExperience.some(w=>isMilitary(w.companyName));
+    const bars = p.workExperience.map(w => {
+      const s = Math.max(w.startDateOn?.year||TL_START, TL_START);
+      const e = Math.min(w.endDateOn?.year||TL_END, TL_END);
+      if (s > TL_END || e < TL_START) return '';
+      const left = (s - TL_START) * TL_PX_PER_YEAR;
+      const width = Math.max((e - s + 1) * TL_PX_PER_YEAR, 4);
+      const color = isMilitary(w.companyName) ? 'var(--orange)' : 'var(--cyan-dim)';
+      const bg = isMilitary(w.companyName) ? 'rgba(255,107,0,0.7)' : 'rgba(0,100,170,0.7)';
+      const name = (w.companyName||'').slice(0,20);
+      return `<div class="tl-bar" style="left:${left}px;width:${width}px;background:${bg};border-left:2px solid ${color}" title="${w.companyName} (${s}–${e}): ${w.title||''}"><span class="tl-bar-label">${width>40?name:''}</span></div>`;
+    }).join('');
+    return `<div class="tl-person-row">
+      <div class="tl-person-name" onclick="selectPerson(STATE.people.find(x=>x.id==='${p.id}'))" title="${p.firstName} ${p.lastName}">${p.firstName} ${p.lastName}${mil?'<span class="military-flag" style="font-size:8px;margin-left:4px">MIL</span>':''}</div>
+      <div class="tl-bars" style="width:${totalWidth}px">${bars}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// CONNECTIONS TABLE
+// ============================================================
+let _connData = [];
+let _connSortKey = 'years', _connSortDir = -1;
+
+function buildConnections() {
+  _connData = [];
+  const people = STATE.people;
+  for (let i = 0; i < people.length; i++) {
+    for (let j = i+1; j < people.length; j++) {
+      const a = people[i], b = people[j];
+      a.workExperience.forEach(wa => {
+        b.workExperience.forEach(wb => {
+          if (!wa.companyName || wa.companyName !== wb.companyName) return;
+          const as_ = wa.startDateOn?.year||0, ae = wa.endDateOn?.year||2026;
+          const bs_ = wb.startDateOn?.year||0, be = wb.endDateOn?.year||2026;
+          const from = Math.max(as_,bs_), to = Math.min(ae,be);
+          if (from <= to) {
+            _connData.push({
+              a, b,
+              aName: a.firstName+' '+a.lastName,
+              bName: b.firstName+' '+b.lastName,
+              company: wa.companyName,
+              from, to,
+              years: to - from + 1,
+              milA: a.workExperience.some(w=>isMilitary(w.companyName)),
+              milB: b.workExperience.some(w=>isMilitary(w.companyName)),
+            });
+          }
+        });
+      });
+    }
+  }
+  // Populate company filter
+  const companies = [...new Set(_connData.map(c=>c.company))].sort();
+  const sel = document.getElementById('conn-company');
+  if (sel) sel.innerHTML = '<option value="">All</option>' + companies.slice(0,100).map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function renderConnections() {
+  if (!_connData.length && STATE.people.length) buildConnections();
+  const search = (document.getElementById('conn-search')?.value||'').toLowerCase();
+  const company = document.getElementById('conn-company')?.value||'';
+  const minYears = parseInt(document.getElementById('conn-min-overlap')?.value||'1');
+
+  let data = _connData.filter(c => {
+    if (c.years < minYears) return false;
+    if (company && c.company !== company) return false;
+    if (search && !c.aName.toLowerCase().includes(search) && !c.bName.toLowerCase().includes(search) && !c.company.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  data.sort((a,b) => {
+    let av = a[_connSortKey], bv = b[_connSortKey];
+    if (typeof av === 'string') return _connSortDir * av.localeCompare(bv);
+    return _connSortDir * (av - bv);
+  });
+
+  document.getElementById('conn-count').textContent = data.length + ' connections';
+  const tbody = document.getElementById('conn-tbody');
+  tbody.innerHTML = data.slice(0,500).map(c=>`<tr>
+    <td class="conn-name" onclick="selectPerson(STATE.people.find(x=>x.id==='${c.a.id}'))">${c.aName}${c.milA?'<span class="military-flag" style="font-size:8px;margin-left:4px">MIL</span>':''}</td>
+    <td class="conn-name" onclick="selectPerson(STATE.people.find(x=>x.id==='${c.b.id}'))">${c.bName}${c.milB?'<span class="military-flag" style="font-size:8px;margin-left:4px">MIL</span>':''}</td>
+    <td class="conn-company">${c.company}</td>
+    <td class="conn-period">${c.from}</td>
+    <td class="conn-period">${c.to}</td>
+    <td class="conn-period">${c.years}</td>
+    <td>${(c.milA||c.milB)?'<span style="color:var(--orange);font-size:9px">⚡ MIL</span>':'<span style="color:var(--cyan);font-size:9px">◈ CIV</span>'}</td>
+  </tr>`).join('');
+  if (data.length > 500) {
+    tbody.innerHTML += `<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:10px">+${data.length-500} more — use filters to narrow</td></tr>`;
+  }
+}
+
+function sortConn(key) {
+  if (_connSortKey === key) _connSortDir *= -1; else { _connSortKey = key; _connSortDir = -1; }
+  renderConnections();
+}
+
+// ============================================================
+// HEATMAP VIEW
+// ============================================================
+function renderHeatmap() {
+  if (!STATE.people.length) return;
+
+  // Companies
+  const coEntries = Object.entries(STATE.companies).sort((a,b)=>b[1].people.length-a[1].people.length).slice(0,60);
+  const maxCo = coEntries[0]?.[1].people.length||1;
+  document.getElementById('hm-companies').innerHTML = coEntries.map(([name,co])=>{
+    const pct = co.people.length/maxCo;
+    const alpha = 0.15 + pct*0.75;
+    const color = co.military ? `rgba(255,107,0,${alpha})` : `rgba(0,212,255,${alpha})`;
+    const textColor = co.military ? 'var(--orange)' : 'var(--cyan)';
+    return `<div class="hm-cell" style="background:${color}" onclick="filterByCompany('${name.replace(/'/g,"\\'")}')">
+      <span class="hm-cell-label">${co.military?'⚡ ':''}${name.slice(0,28)}</span>
+      <span class="hm-cell-count" style="color:${textColor}">${co.people.length}</span>
+    </div>`;
+  }).join('');
+
+  // Locations
+  const locMap = {};
+  STATE.people.forEach(p => {
+    const parts = p.location?.split(',') || [];
+    const loc = parts[parts.length-1]?.trim() || 'Unknown';
+    locMap[loc] = (locMap[loc]||0)+1;
+  });
+  const locEntries = Object.entries(locMap).sort((a,b)=>b[1]-a[1]).slice(0,40);
+  const maxLoc = locEntries[0]?.[1]||1;
+  document.getElementById('hm-locations').innerHTML = locEntries.map(([loc,cnt])=>{
+    const alpha = 0.15 + (cnt/maxLoc)*0.75;
+    return `<div class="hm-cell" style="background:rgba(0,255,136,${alpha})">
+      <span class="hm-cell-label">📍 ${loc}</span>
+      <span class="hm-cell-count" style="color:var(--green)">${cnt}</span>
+    </div>`;
+  }).join('');
+
+  // Years active
+  const yearMap = {};
+  for (let y = 1990; y <= 2026; y++) yearMap[y] = 0;
+  STATE.people.forEach(p => {
+    p.workExperience.forEach(w => {
+      const s = w.startDateOn?.year||2000, e = w.endDateOn?.year||2026;
+      for (let y = Math.max(s,1990); y <= Math.min(e,2026); y++) yearMap[y]++;
+    });
+  });
+  const maxYear = Math.max(...Object.values(yearMap))||1;
+  document.getElementById('hm-years').innerHTML = Object.entries(yearMap).map(([yr,cnt])=>{
+    const alpha = 0.1 + (cnt/maxYear)*0.8;
+    return `<div class="hm-cell" style="background:rgba(155,89,255,${alpha});flex-direction:column;gap:2px;padding:6px 8px;min-width:52px;text-align:center">
+      <span class="hm-cell-count" style="color:var(--purple);font-size:11px">${yr}</span>
+      <span class="hm-cell-label" style="font-size:9px">${cnt}</span>
+    </div>`;
+  }).join('');
+}
+
+function filterByCompany(name) {
+  const sel = document.getElementById('filter-company');
+  if (sel) { sel.value = name; applyFilters(); }
+}
+
+// ============================================================
+// RECENT VIEWED
+// ============================================================
+const RECENT = [];
+function addRecent(person) {
+  const existing = RECENT.findIndex(r => r.id === person.id);
+  if (existing !== -1) RECENT.splice(existing, 1);
+  RECENT.unshift({ id: person.id, name: person.firstName+' '+person.lastName, time: new Date() });
+  if (RECENT.length > 20) RECENT.pop();
+  renderRecent();
+}
+function renderRecent() {
+  const list = document.getElementById('recent-list');
+  if (!list) return;
+  list.innerHTML = RECENT.map(r => {
+    const mins = Math.round((Date.now() - r.time)/60000);
+    const timeStr = mins < 1 ? 'just now' : mins + 'm ago';
+    return `<div class="recent-item" onclick="selectPerson(STATE.people.find(x=>x.id==='${r.id}'))">
+      <div class="recent-item-name">${r.name}</div>
+      <div class="recent-item-time">${timeStr}</div>
+    </div>`;
+  }).join('') || '<div style="padding:12px;font-size:11px;color:var(--text-dim)">No recent profiles</div>';
+}
+function toggleRecentPanel() {
+  document.getElementById('recent-panel').classList.toggle('open');
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportData(format) {
+  const people = STATE.filteredPeople.length ? STATE.filteredPeople : STATE.people;
+  if (!people.length) { alert('No data to export'); return; }
+
+  if (format === 'csv') {
+    const headers = ['firstName','lastName','headline','location','industry','connections','networkDistance','publicProfileUrl','militaryLinks','totalPositions','companies'];
+    const rows = people.map(p => {
+      const milLinks = p.workExperience.filter(w=>isMilitary(w.companyName)).map(w=>w.companyName).join('; ');
+      const companies = p.workExperience.map(w=>w.companyName).join('; ');
+      return [p.firstName,p.lastName,p.headline||'',p.location||'',p.industryName||'',p.numConnections||0,p.networkDistance||'',p.publicProfileUrl||'',milLinks,p.workExperience.length,companies]
+        .map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    downloadFile(csv, 'nexus_export.csv', 'text/csv');
+  } else {
+    const out = people.map(p => ({
+      id: p.id, firstName: p.firstName, lastName: p.lastName,
+      headline: p.headline, location: p.location, industry: p.industryName,
+      connections: p.numConnections, networkDistance: p.networkDistance,
+      publicProfileUrl: p.publicProfileUrl,
+      workExperience: p.workExperience,
+      educations: p.educations,
+    }));
+    downloadFile(JSON.stringify(out, null, 2), 'nexus_export.json', 'application/json');
+  }
+}
+
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function resizeCanvas() { /* no-op, graph removed */ }
+
+// ============================================================
+// GEO VIEW
+// ============================================================
+const CITY_COORDS = {
+  'Tel Aviv': [32.07, 34.77],
+  'Tel Aviv-Yafo': [32.07, 34.77],
+  'Tel Aviv District': [32.07, 34.77],
+  'Ramat Gan': [32.07, 34.82],
+  'Jerusalem': [31.77, 35.21],
+  'Jerusalem District': [31.77, 35.21],
+  'Haifa': [32.81, 34.98],
+  'Haifa District': [32.81, 34.98],
+  'Be\'er Sheva': [31.25, 34.79],
+  'South District': [30.9, 34.8],
+  'Center District': [32.0, 34.85],
+  'Herzliya': [32.16, 34.83],
+  'Petah Tikva': [32.08, 34.88],
+  'Ness Ziona': [31.93, 34.80],
+  'Modiin': [31.9, 34.99],
+  'Beit Shemesh': [31.75, 34.99],
+  'Pardes Hana': [32.46, 34.95],
+  'United Kingdom': [51.5, -0.12],
+  'London': [51.5, -0.12],
+  'United States': [37.09, -95.71],
+  'New York': [40.71, -74.00],
+  'San Francisco': [37.77, -122.41],
+  'Israel': [31.5, 34.75],
+};
+
+function coordsForLocation(loc) {
+  if (!loc) return null;
+  for (const [city, coords] of Object.entries(CITY_COORDS)) {
+    if (loc.includes(city)) return coords;
+  }
+  if (loc.includes('Israel')) return [31.5, 34.75];
+  return null;
+}
+
+function buildGeoData() {
+  STATE.geo.dots = [];
+  STATE.people.forEach(p => {
+    const coords = coordsForLocation(p.location);
+    if (!coords) return;
+    const milExp = p.workExperience.filter(w => isMilitary(w.companyName));
+    const civExp = p.workExperience.filter(w => !isMilitary(w.companyName));
+    STATE.geo.dots.push({
+      person: p, lat: coords[0], lng: coords[1],
+      isMil: milExp.length > 0,
+      milStart: milExp.length ? Math.min(...milExp.map(w => w.startDateOn?.year || 2020)) : null,
+      milEnd: milExp.length ? Math.max(...milExp.map(w => w.endDateOn?.year || 2024)) : null,
+      civStart: civExp.length ? Math.min(...civExp.map(w => w.startDateOn?.year || 2020)) : null,
+    });
+  });
+}
+
+function updateGeoYear(year) {
+  STATE.geo.year = parseInt(year);
+  document.getElementById('year-display').textContent = year;
+  renderGeo();
+}
+
+function renderGeo() {
+  const canvas = document.getElementById('geo-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background map (simple dark rectangle with grid)
+  ctx.fillStyle = '#060810';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines (lat/lng)
+  ctx.strokeStyle = 'rgba(0,212,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    ctx.beginPath(); ctx.moveTo(i * W/10, 0); ctx.lineTo(i * W/10, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i * H/10); ctx.lineTo(W, i * H/10); ctx.stroke();
+  }
+
+  // Middle East focus — project lat/lng to canvas
+  // Focus on Israel/Middle East area (27-36 lat, 30-40 lng) + broader if non-Israel
+  function project(lat, lng) {
+    // Simple equirectangular for the focus region
+    const minLat = 27, maxLat = 36, minLng = 30, maxLng = 40;
+    const x = ((lng - minLng) / (maxLng - minLng)) * W;
+    const y = H - ((lat - minLat) / (maxLat - minLat)) * H;
+    return [x, y];
+  }
+
+  // Draw person dots
+  const year = STATE.geo.year;
+  STATE.geo.dots.forEach(dot => {
+    // Check if person was active this year
+    const allExp = dot.person.workExperience;
+    const activeThisYear = allExp.some(w => {
+      const s = w.startDateOn?.year || 2000;
+      const en = w.endDateOn?.year || 2026;
+      return s <= year && en >= year;
+    });
+    const milThisYear = dot.person.workExperience.some(w => isMilitary(w.companyName) && (w.startDateOn?.year || 2000) <= year && (w.endDateOn?.year || 2026) >= year);
+
+    if (!activeThisYear && year < 2026) return;
+
+    let [x, y] = project(dot.lat, dot.lng);
+    // Jitter to avoid overlap
+    x += (Math.random() - 0.5) * 20;
+    y += (Math.random() - 0.5) * 20;
+
+    if (x < 0 || x > W || y < 0 || y > H) {
+      // Outside main region — show in margin
+      x = Math.random() * 80 + W - 100;
+      y = Math.random() * (H - 40) + 20;
+    }
+
+    const col = milThisYear ? '#FF6B00' : '#00D4FF';
+    const r = 5;
+
+    ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, Math.PI*2);
+    ctx.fillStyle = col + '22'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = col + '88'; ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 1;
+    ctx.stroke();
+
+    if (STATE.graph.showLabels) {
+      ctx.fillStyle = col;
+      ctx.font = '9px Share Tech Mono';
+      ctx.fillText(dot.person.firstName, x + 8, y + 3);
+    }
+  });
+
+  // Region label
+  ctx.fillStyle = 'rgba(0,212,255,0.3)';
+  ctx.font = '10px Share Tech Mono';
+  ctx.fillText('ISRAEL / MIDDLE EAST', 10, H - 10);
+}
+
+// ============================================================
+// MATRIX VIEW
+// ============================================================
+function renderMatrix() {
+  const container = document.getElementById('matrix-container');
+  const people = STATE.filteredPeople;
+  if (!people.length) { container.innerHTML = '<div class="empty-state" style="height:400px"><div class="empty-icon">▦</div><div class="empty-title">NO DATA</div></div>'; return; }
+
+  const rows = people.map(p => {
+    const milExp = p.workExperience.filter(w => isMilitary(w.companyName));
+    const civExp = p.workExperience.filter(w => !isMilitary(w.companyName));
+    const currentCo = p.currentPositions?.[0]?.companyName || p.workExperience[0]?.companyName || '—';
+    const milUnits = [...new Set(milExp.map(w => w.companyName))].join(', ');
+    return { p, milExp, civExp, currentCo, milUnits };
+  });
+
+  let html = `<table class="matrix-table">
+    <thead><tr>
+      <th onclick="sortMatrix('name')">TARGET ↕</th>
+      <th onclick="sortMatrix('loc')">LOCATION ↕</th>
+      <th onclick="sortMatrix('current')">CURRENT ENTITY ↕</th>
+      <th onclick="sortMatrix('mil')">MIL UNIT(S) ↕</th>
+      <th onclick="sortMatrix('exp')">EXP ↕</th>
+      <th>PROFILE</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach(({ p, milExp, milUnits }) => {
+    const name = p.firstName + ' ' + p.lastName;
+    const mil = milExp.length > 0;
+    html += `<tr>
+      <td class="td-name" onclick="selectPerson(STATE.people.find(x=>x.id==='${p.id}'))">${name}${mil ? '<span class="military-flag">MIL</span>' : ''}</td>
+      <td class="td-loc">${p.location || '—'}</td>
+      <td>${p.currentPositions?.[0]?.companyName || p.workExperience[0]?.companyName || '—'}</td>
+      <td class="td-mil">${milUnits || '—'}</td>
+      <td class="td-count">${p.workExperience.length}</td>
+      <td><span style="font-size:10px;color:var(--cyan);cursor:pointer" onclick="selectPerson(STATE.people.find(x=>x.id==='${p.id}'))">[VIEW →]</span></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ============================================================
+// PERSON SELECTION & PROFILE VIEW
+// ============================================================
+function selectPerson(person) {
+  if (!person) return;
+  STATE.selectedPerson = person;
+  addRecent(person);
+
+  // Update list
+  document.querySelectorAll('.person-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === person.id);
+  });
+
+  // Switch to profile tab
+  switchTab('profile');
+  renderProfile(person);
+}
+
+function renderProfile(p) {
+  document.getElementById('profile-empty').style.display = 'none';
+  const content = document.getElementById('profile-content');
+  content.style.display = 'flex';
+
+  const milExp = p.workExperience.filter(w => isMilitary(w.companyName));
+  const civExp = p.workExperience.filter(w => !isMilitary(w.companyName));
+  const initials = (p.firstName[0]||'?') + (p.lastName[0]||'?');
+  const profileUrl = p.publicProfileUrl || '#';
+
+  // Find co-workers
+  const coworkers = findCoworkers(p);
+
+  const personIndex = STATE.people.indexOf(p); // 0-based index
+  const photoPath = `fotograflar/${p.photoSlot}.jpg`;
+
+  let html = `
+  <div class="profile-hero">
+    <div class="profile-name-row">
+      <div id="profile-avatar-wrap"></div>
+      <div class="profile-info">
+        <div class="profile-fullname">${p.firstName} ${p.lastName}</div>
+        <div class="profile-headline-text">${p.headline || 'No headline'}</div>
+        <div class="profile-tags">
+          ${p.location ? `<span class="tag tag-loc">📍 ${p.location}</span>` : ''}
+          ${p.numConnections ? `<span class="tag tag-conn">⬡ ${p.numConnections}+ conn.</span>` : ''}
+          ${p.industryName ? `<span class="tag tag-ind">${p.industryName}</span>` : ''}
+          ${milExp.length ? `<span class="tag" style="border-color:var(--orange);color:var(--orange)">⚡ MILITARY LINKS</span>` : ''}
+        </div>
+        ${profileUrl !== '#' ? `<div class="profile-url"><a href="${profileUrl}" target="_blank">↗ ${profileUrl.replace('https://','')}</a></div>` : ''}
+      </div>
+    </div>
+  </div>`;
+
+  content.innerHTML = html;
+
+  // Try to load photo; fallback to initials avatar
+  const avatarWrap = document.getElementById('profile-avatar-wrap');
+  const img = new Image();
+  img.onload = () => {
+    avatarWrap.className = 'profile-photo-wrap';
+    avatarWrap.onclick = () => openLightbox(photoPath);
+    avatarWrap.innerHTML = `<img src="${photoPath}" alt="${p.firstName}"><span class="photo-zoom-icon">⤢</span>`;
+  };
+  img.onerror = () => {
+    avatarWrap.className = 'profile-avatar';
+    avatarWrap.textContent = initials;
+  };
+  img.src = photoPath;
+
+  let html2 = '';
+
+  // Work timeline
+  html2 += `<div class="profile-section">
+    <div class="section-header"><div class="section-title">Career Timeline</div><div class="section-line"></div></div>
+    <div class="timeline">`;
+
+  const sortedExp = [...p.workExperience].sort((a,b) => (b.startDateOn?.year||0) - (a.startDateOn?.year||0));
+  sortedExp.forEach(w => {
+    const mil = isMilitary(w.companyName);
+    const start = w.startDateOn ? `${w.startDateOn.month||''}/${w.startDateOn.year}` : '?';
+    const end = w.endDateOn ? `${w.endDateOn.month||''}/${w.endDateOn.year}` : 'Present';
+    const ind = w.companyResolutionResult?.industries?.[0] || '';
+    html2 += `<div class="timeline-item ${mil?'military':''}">
+      <div class="tl-company">${w.companyName || '—'}</div>
+      <div class="tl-title">${w.title || ''}</div>
+      <div class="tl-date">${start} → ${end}</div>
+      ${ind ? `<div class="tl-industry">◈ ${ind}</div>` : ''}
+    </div>`;
+  });
+  html2 += `</div></div>`;
+
+  // Education
+  if (p.educations.length) {
+    html2 += `<div class="profile-section">
+      <div class="section-header"><div class="section-title">Education</div><div class="section-line"></div></div>`;
+    p.educations.forEach(ed => {
+      const school = ed.organizationUrnResolutionResult?.name || ed.schoolName || ed.school || '?';
+      const degree = ed.degreeName || ed.fieldOfStudy || '';
+      const yrs = [ed.startDateOn?.year, ed.endDateOn?.year].filter(Boolean).join(' – ');
+      html2 += `<div class="edu-item">
+        <div class="edu-school">${school}</div>
+        ${degree ? `<div class="edu-degree">${degree}</div>` : ''}
+        ${yrs ? `<div class="edu-years">${yrs}</div>` : ''}
+      </div>`;
+    });
+    html2 += `</div>`;
+  }
+
+  // Co-workers
+  if (coworkers.length) {
+    html2 += `<div class="profile-section">
+      <div class="section-header"><div class="section-title">Shared History (${coworkers.length})</div><div class="section-line"></div></div>
+      <div class="coworker-grid">`;
+    coworkers.slice(0,12).forEach(cw => {
+      html2 += `<div class="coworker-card" onclick="selectPerson(STATE.people.find(x=>x.id==='${cw.person.id}'))">
+        <div class="cw-name">${cw.person.firstName} ${cw.person.lastName}</div>
+        <div class="cw-company">${cw.company}</div>
+        <div class="cw-period">${cw.overlap}</div>
+      </div>`;
+    });
+    html2 += `</div></div>`;
+  }
+
+  // Append the rest of the sections (html2) to content
+  content.insertAdjacentHTML('beforeend', html2);
+
+  // Open intel drawer
+  openIntelDrawer(p, coworkers);
+}
+
+function findCoworkers(person) {
+  const results = [];
+  const personCompanies = person.workExperience.map(w => ({
+    name: w.companyName, start: w.startDateOn?.year||0, end: w.endDateOn?.year||2026
+  }));
+
+  STATE.people.forEach(other => {
+    if (other.id === person.id) return;
+    other.workExperience.forEach(ow => {
+      const shared = personCompanies.find(pc => pc.name === ow.companyName && pc.name);
+      if (shared) {
+        const os = ow.startDateOn?.year||0, oe = ow.endDateOn?.year||2026;
+        const overlapStart = Math.max(shared.start, os);
+        const overlapEnd = Math.min(shared.end, oe);
+        if (overlapStart <= overlapEnd) {
+          const existing = results.find(r => r.person.id === other.id && r.company === shared.name);
+          if (!existing) {
+            results.push({ person: other, company: shared.name, overlap: `${overlapStart}–${overlapEnd}` });
+          }
+        }
+      }
+    });
+  });
+  return results;
+}
+
+// ============================================================
+// INTEL DRAWER
+// ============================================================
+function openIntelDrawer(person, coworkers) {
+  const panel = document.getElementById('right-panel');
+  panel.classList.add('open');
+  const content = document.getElementById('intel-content');
+
+  const milExp = person.workExperience.filter(w => isMilitary(w.companyName));
+  const companies = [...new Set(person.workExperience.map(w=>w.companyName).filter(Boolean))];
+
+  content.innerHTML = `
+  <div class="intel-section">
+    <div class="intel-section-title">IDENTITY MATRIX</div>
+    <div class="intel-row"><span class="intel-key">Full Name</span><span class="intel-val">${person.firstName} ${person.lastName}</span></div>
+    <div class="intel-row"><span class="intel-key">Location</span><span class="intel-val">${person.location||'Unknown'}</span></div>
+    <div class="intel-row"><span class="intel-key">Industry</span><span class="intel-val">${person.industryName||'—'}</span></div>
+    <div class="intel-row"><span class="intel-key">Connections</span><span class="intel-val cyan">${person.numConnections||0}+</span></div>
+    <div class="intel-row"><span class="intel-key">Network Dist.</span><span class="intel-val">${person.networkDistance||'—'}</span></div>
+  </div>
+  <div class="intel-section">
+    <div class="intel-section-title">THREAT ASSESSMENT</div>
+    <div class="intel-row"><span class="intel-key">Military Links</span><span class="intel-val orange">${milExp.length} positions</span></div>
+    <div class="intel-row"><span class="intel-key">Total Entities</span><span class="intel-val cyan">${companies.length}</span></div>
+    <div class="intel-row"><span class="intel-key">Shared History</span><span class="intel-val green">${coworkers.length} persons</span></div>
+    <div class="intel-row"><span class="intel-key">Profile Type</span><span class="intel-val orange">${milExp.length > 0 ? '⚡ MILITARY-LINKED' : '◈ CIVILIAN'}</span></div>
+  </div>
+  ${milExp.length ? `<div class="intel-section">
+    <div class="intel-section-title">MILITARY POSITIONS</div>
+    ${milExp.map(w=>`<div class="overlap-item">
+      <div class="overlap-persons">${w.companyName}</div>
+      <div class="overlap-detail">${w.title||''}</div>
+      <div class="overlap-period">${w.startDateOn?.year||'?'} → ${w.endDateOn?.year||'Present'}</div>
+    </div>`).join('')}
+  </div>` : ''}
+  ${coworkers.length ? `<div class="intel-section">
+    <div class="intel-section-title">SHARED NETWORK (${coworkers.length})</div>
+    ${coworkers.slice(0,8).map(cw=>`<div class="overlap-item">
+      <div class="overlap-persons">${cw.person.firstName} ${cw.person.lastName}</div>
+      <div class="overlap-detail">@ ${cw.company}</div>
+      <div class="overlap-period">${cw.overlap}</div>
+    </div>`).join('')}
+  </div>` : ''}
+  `;
+}
+
+function showCompanyIntel(companyName) {
+  const co = STATE.companies[companyName];
+  if (!co) return;
+  const panel = document.getElementById('right-panel');
+  panel.classList.add('open');
+  const content = document.getElementById('intel-content');
+  const members = co.people.map(id => STATE.people.find(p=>p.id===id)).filter(Boolean);
+
+  content.innerHTML = `
+  <div class="intel-section">
+    <div class="intel-section-title">ENTITY PROFILE</div>
+    <div class="intel-row"><span class="intel-key">Name</span><span class="intel-val">${companyName}</span></div>
+    <div class="intel-row"><span class="intel-key">Type</span><span class="intel-val orange">${co.military ? '⚡ MILITARY' : '◈ CIVILIAN'}</span></div>
+    <div class="intel-row"><span class="intel-key">Industry</span><span class="intel-val">${co.industry||'—'}</span></div>
+    <div class="intel-row"><span class="intel-key">Known Members</span><span class="intel-val cyan">${members.length}</span></div>
+  </div>
+  <div class="intel-section">
+    <div class="intel-section-title">LINKED TARGETS</div>
+    ${members.map(p=>`<div class="overlap-item" style="cursor:pointer" onclick="selectPerson(STATE.people.find(x=>x.id==='${p.id}'))">
+      <div class="overlap-persons">${p.firstName} ${p.lastName}</div>
+      <div class="overlap-detail">${p.headline?.slice(0,60)||''}</div>
+      <div class="overlap-period">${p.location||''}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function closeDrawer() { document.getElementById('right-panel').classList.remove('open'); }
+
+// ============================================================
+// OVERLAPS ENGINE
+// ============================================================
+function findOverlaps() {
+  const overlaps = [];
+  const people = STATE.people;
+  for (let i = 0; i < people.length; i++) {
+    for (let j = i+1; j < people.length; j++) {
+      const a = people[i], b = people[j];
+      a.workExperience.forEach(we => {
+        b.workExperience.forEach(we2 => {
+          if (we.companyName && we.companyName === we2.companyName) {
+            const as = we.startDateOn?.year||0, ae = we.endDateOn?.year||2026;
+            const bs = we2.startDateOn?.year||0, be = we2.endDateOn?.year||2026;
+            if (Math.max(as,bs) <= Math.min(ae,be)) {
+              overlaps.push({ a, b, company: we.companyName, from: Math.max(as,bs), to: Math.min(ae,be) });
+            }
+          }
+        });
+      });
+    }
+  }
+
+  const panel = document.getElementById('right-panel');
+  panel.classList.add('open');
+  const content = document.getElementById('intel-content');
+  content.innerHTML = `
+  <div class="intel-section">
+    <div class="intel-section-title">TEMPORAL OVERLAPS (${overlaps.length})</div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px">Persons who worked at same entity during overlapping periods</div>
+    ${overlaps.slice(0,30).map(ov=>`<div class="overlap-item">
+      <div class="overlap-persons">${ov.a.firstName} ${ov.a.lastName} ↔ ${ov.b.firstName} ${ov.b.lastName}</div>
+      <div class="overlap-detail">${ov.company}</div>
+      <div class="overlap-period">${ov.from} – ${ov.to}</div>
+    </div>`).join('')}
+    ${overlaps.length > 30 ? `<div style="font-size:11px;color:var(--text-dim);padding:8px">+${overlaps.length-30} more overlaps</div>` : ''}
+  </div>`;
+}
+
+// ============================================================
+// FILTERS & SEARCH
+// ============================================================
+function applyFilters() {
+  const loc = document.getElementById('filter-loc').value;
+  const company = document.getElementById('filter-company').value;
+  const mil = document.getElementById('filter-mil').value;
+  const search = document.getElementById('search-global').value.toLowerCase();
+
+  STATE.filteredPeople = STATE.people.filter(p => {
+    if (loc && !p.location.includes(loc)) return false;
+    if (company && !p.workExperience.some(w => w.companyName === company)) return false;
+    if (mil) {
+      const keywords = { 'Unit 8200': '8200', 'Intelligence Corps': 'intelligence corps', 'Ofek 324': 'ofek 324', 'C4I': 'c4i', 'IDF': 'idf' };
+      const kw = keywords[mil];
+      if (!p.workExperience.some(w => w.companyName?.toLowerCase().includes(kw))) return false;
+    }
+    if (search) {
+      const haystack = (p.firstName+' '+p.lastName+' '+p.headline+' '+p.location+' '+p.workExperience.map(w=>w.companyName).join(' ')).toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+
+  renderPeopleList();
+  renderMatrix();
+  document.getElementById('list-count').textContent = `${STATE.filteredPeople.length} targets`;
+}
+
+function globalSearch(val) { applyFilters(); }
+
+function populateFilters() {
+  const locations = [...new Set(STATE.people.map(p => {
+    const parts = p.location?.split(',');
+    return parts?.[parts.length-1]?.trim() || '';
+  }).filter(Boolean))].sort();
+
+  const locSel = document.getElementById('filter-loc');
+  locSel.innerHTML = '<option value="">All Locations</option>' + locations.map(l=>`<option value="${l}">${l}</option>`).join('');
+
+  const companies = Object.keys(STATE.companies).sort();
+  const coSel = document.getElementById('filter-company');
+  coSel.innerHTML = '<option value="">All Companies</option>' + companies.slice(0,100).map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+// ============================================================
+// PEOPLE LIST RENDER
+// ============================================================
+function renderPeopleList() {
+  const list = document.getElementById('people-list');
+  if (!STATE.filteredPeople.length) {
+    list.innerHTML = '<div class="empty-state" style="height:200px"><div class="empty-icon">⬡</div><div class="empty-title">NO RESULTS</div></div>';
+    return;
+  }
+  list.innerHTML = STATE.filteredPeople.map(p => {
+    const mil = p.workExperience.some(w => isMilitary(w.companyName));
+    const country = p.location?.split(',').pop()?.trim() || '';
+    return `<div class="person-item" data-id="${p.id}" onclick="selectPerson(STATE.people.find(x=>x.id==='${p.id}'))">
+      <div class="person-name">${p.firstName} ${p.lastName}${mil?'<span class="military-flag">MIL</span>':''}</div>
+      <div class="person-headline">${p.headline?.slice(0,60)||'No headline'}</div>
+      <div class="person-meta">
+        ${country?`<span class="badge badge-loc">${country}</span>`:''}
+        ${mil?`<span class="badge badge-mil">⚡ MIL</span>`:'<span class="badge badge-tech">◈ TECH</span>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(tab) {
+  STATE.activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById(tab + '-view').classList.add('active');
+
+  if (tab === 'stats') renderStats();
+  if (tab === 'timeline') renderTimeline();
+  if (tab === 'connections') renderConnections();
+  if (tab === 'heatmap') renderHeatmap();
+  if (tab === 'geo') { resizeGeoCanvas(); renderGeo(); }
+  if (tab === 'matrix') renderMatrix();
+}
+
+function resizeGeoCanvas() {
+  const canvas = document.getElementById('geo-canvas');
+  const parent = document.getElementById('geo-map');
+  canvas.width = parent.clientWidth;
+  canvas.height = parent.clientHeight;
+}
+
+// ============================================================
+// UPDATE UI (after data load)
+// ============================================================
+function updateUI() {
+  const milCount = STATE.people.filter(p => p.workExperience.some(w => isMilitary(w.companyName))).length;
+  document.getElementById('stat-people').textContent = STATE.people.length;
+  document.getElementById('stat-companies').textContent = Object.keys(STATE.companies).length;
+  document.getElementById('stat-edges').textContent = STATE.people.length; // reused as target count
+  document.getElementById('stat-mil').textContent = milCount;
+  document.getElementById('last-update').textContent = 'LAST SYNC: ' + new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+  _connData = []; // reset connections cache
+  populateFilters();
+  applyFilters();
+  renderStats();
+}
+
+// ============================================================
+// SORT MATRIX
+// ============================================================
+let sortDir = 1;
+function sortMatrix(key) {
+  sortDir *= -1;
+  STATE.filteredPeople.sort((a,b) => {
+    if (key==='name') return sortDir * (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName);
+    if (key==='loc') return sortDir * (a.location||'').localeCompare(b.location||'');
+    if (key==='mil') return sortDir * (b.workExperience.filter(w=>isMilitary(w.companyName)).length - a.workExperience.filter(w=>isMilitary(w.companyName)).length);
+    if (key==='exp') return sortDir * (b.workExperience.length - a.workExperience.length);
+    return 0;
+  });
+  renderMatrix();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+// ============================================================
+// PHOTO LIGHTBOX
+// ============================================================
+let _lbZoom = 1;
+function openLightbox(src) {
+  _lbZoom = 1;
+  const lb = document.getElementById('photo-lightbox');
+  const img = document.getElementById('lightbox-img');
+  img.src = src;
+  img.style.transform = 'scale(1)';
+  document.getElementById('lightbox-zoom-val').textContent = '100%';
+  lb.classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('photo-lightbox').classList.remove('open');
+}
+function lightboxZoom(delta) {
+  _lbZoom = Math.max(0.25, Math.min(4, _lbZoom + delta));
+  document.getElementById('lightbox-img').style.transform = `scale(${_lbZoom})`;
+  document.getElementById('lightbox-zoom-val').textContent = Math.round(_lbZoom * 100) + '%';
+}
+function lightboxReset() {
+  _lbZoom = 1;
+  document.getElementById('lightbox-img').style.transform = 'scale(1)';
+  document.getElementById('lightbox-zoom-val').textContent = '100%';
+}
+// Scroll-to-zoom inside lightbox
+document.addEventListener('wheel', e => {
+  if (!document.getElementById('photo-lightbox').classList.contains('open')) return;
+  e.preventDefault();
+  lightboxZoom(e.deltaY < 0 ? 0.1 : -0.1);
+}, { passive: false });
+
+// ============================================================
+// SPLASH + CHUNK LOADER
+// ============================================================
+function setSplashStatus(msg, pct) {
+  const el = document.getElementById('splash-status');
+  const bar = document.getElementById('splash-bar');
+  if (el) el.textContent = msg;
+  if (bar) bar.style.width = pct + '%';
+}
+function dismissSplash() {
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+  splash.classList.add('fade-out');
+  setTimeout(() => splash.remove(), 450);
+}
+
+const JSON_CHUNKS = (() => {
+  const bolums = [1, 2, 3];
+  const offsets = [0,25,50,75,100,125,150,175,200,225,250,275,300,325,350,375,400,425,450,475,500,525,550,575,600,625,650,675,700,725,750,775,800,825,850,875,900,925,950,975];
+  const files = [];
+  bolums.forEach(b => offsets.forEach(o => files.push(`json/bolum_${b}_liste_${o}.json`)));
+  return files;
+})();
+
+window.addEventListener('load', () => {
+  const splashKillswitch = setTimeout(() => dismissSplash(), 120000);
+
+  async function loadChunks() {
+    const total = JSON_CHUNKS.length;
+    setSplashStatus(`FETCHING ALL ${total} FILES...`, 5);
+
+    // Tüm dosyaları aynı anda iste
+    const results = await Promise.all(JSON_CHUNKS.map(file =>
+      fetch(file)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+    ));
+
+    setSplashStatus(`PROCESSING ${total} FILES...`, 70);
+    await new Promise(r => setTimeout(r, 0));
+
+    for (const data of results) {
+      if (data) ingestElements(data.elements || []);
+    }
+
+    clearTimeout(splashKillswitch);
+    _connData = [];
+    updateUI();
+    setSplashStatus(`✓ ${STATE.people.length} TARGETS LOADED`, 100);
+    setTimeout(dismissSplash, 400);
+  }
+
+  loadChunks().catch(e => {
+    clearTimeout(splashKillswitch);
+    setSplashStatus('LOAD ERROR — CHECK /json/ FOLDER', 100);
+    setTimeout(dismissSplash, 3000);
+  });
+});
+
+window.addEventListener('resize', () => {
+  if (STATE.activeTab === 'geo') resizeGeoCanvas();
+});
+
+// Drag-drop support for import
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('drop-zone');
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+  });
+});
+</script>
+</body>
+</html>
